@@ -1,6 +1,6 @@
 # Torus Power Hybrid Scraper
 
-Node.js scraper designed to monitor **Torus Power** units by collecting metrics from both the **Torus Power Connect cloud dashboard** and the device's **local web interface**.
+Node.js scraper designed to monitor **Torus Power AVR** units by collecting metrics from both the **Torus Power Connect cloud dashboard** and the device's **local web interface**.
 
 It pushes these metrics to a **Prometheus Pushgateway** for visualization in Grafana.
 
