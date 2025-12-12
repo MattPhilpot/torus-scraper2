@@ -364,7 +364,7 @@ async function run() {
                     if (dataSource === 1) sourceLabel = 'LOCAL_FRESH';
                     if (dataSource === 2) sourceLabel = 'CLOUD_STALE';
                     if (dataSource === 3) sourceLabel = 'LOCAL_CACHED';
-                    // console.log(`[${new Date().toISOString()}] Iteration ${iteration}: Data pushed (Source: ${sourceLabel}).`);
+                    console.log(`[${new Date().toISOString()}] Iteration ${iteration}: Data pushed (Source: ${sourceLabel}).`);
                 } else {
                     console.warn(`[Iteration ${iteration}] No data available.`);
                 }
