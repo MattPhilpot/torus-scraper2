@@ -1,10 +1,10 @@
-# Torus Power Hybrid Scraper
+## **Torus Power Hybrid Scraper**
 
-Node.js scraper designed to monitor **Torus Power AVR** units by collecting metrics from both the **Torus Power Connect cloud dashboard** and the device's **local web interface**.
+A robust Node.js scraper designed to monitor **Torus Power** units by collecting metrics from both the **Torus Power Connect cloud dashboard** and the device's **local web interface**.
 
 It pushes these metrics to a **Prometheus Pushgateway** for visualization in Grafana.
 
-## Features
+## **Features**
 
   * **Hybrid Polling:**
       * Prioritizes high-quality data (Decimal precision, THD, Timestamps) from the Cloud.
@@ -20,37 +20,34 @@ It pushes these metrics to a **Prometheus Pushgateway** for visualization in Gra
   * **Drift Correction:** Ensures polling loops run at precise intervals (e.g., every 15s).
   * **Timezone Awareness:** Correctly parses device timestamps relative to your local timezone.
 
-## Prerequisites
+## **Prerequisites**
 
   * Docker
   * Kubernetes Cluster (optional, for CronJob deployment)
   * Prometheus Pushgateway
 
-## Configuration
+## **Configuration**
 
 The scraper is configured entirely via Environment Variables.
 
-| **Variable**             | **Description**                                                            | **Default** | **Required?**                     |
-| :----------------------: | :------------------------------------------------------------------------: | :---------: | :-------------------------------: |
-| `TORUS_USERNAME`         | Cloud login email/username                                                 | None        | **Yes**                           |
-| `TORUS_PASSWORD`         | Cloud login password                                                       | None        | **Yes**                           |
-| `PUSHGATEWAY_URL`        | URL of your Pushgateway                                                    | None        | **Yes**                           |
-| `TORUS_LOCAL_URL`        | IP/URL of local device (e.g. \[http://192.168.1.50\](http://192.168.1.50)) | None        | No (but recommended for fallback) |
-| `DEVICE_TIMEZONE_OFFSET` | Device timezone offset from UTC (e.g. -5 for EST)                          | 0           | No                                |
-| `JOB_DURATION`           | How long the script runs before exiting (seconds)                          | 280         | No                                |
-| `POLL_INTERVAL`          | How often to fetch data within the loop (seconds)                          | 15          | No                                |
-| `LOCAL_SCRAPE_INTERVAL`  | Min seconds between local scrapes (Rate Limit)                             | 300         | No                                |
-| `ENABLE_CLOUD_BACKOFF`   | Enable/Disable the cloud check back-off strategy                           | true        | No                                |
+| Variable                     | Description                                         | Default | Required?                         |
+| :--------------------------: | :-------------------------------------------------: | :-----: | :-------------------------------: |
+| **TORUS\_USERNAME**          | Cloud login email/username                          | None    | **Yes**                           |
+| **TORUS\_PASSWORD**          | Cloud login password                                | None    | **Yes**                           |
+| **PUSHGATEWAY\_URL**         | URL of your Pushgateway                             | None    | **Yes**                           |
+| **TORUS\_LOCAL\_URL**        | IP/URL of local device (e.g. <http://192.168.1.50>) | None    | No (but recommended for fallback) |
+| **DEVICE\_TIMEZONE\_OFFSET** | Device timezone offset from UTC (e.g. -5 for EST)   | 0       | No                                |
+| **JOB\_DURATION**            | How long the script runs before exiting (seconds)   | 280     | No                                |
+| **POLL\_INTERVAL**           | How often to fetch data within the loop (seconds)   | 15      | No                                |
+| **LOCAL\_SCRAPE\_INTERVAL**  | Min seconds between local scrapes (Rate Limit)      | 300     | No                                |
+| **ENABLE\_CLOUD\_BACKOFF**   | Enable/Disable the cloud check back-off strategy    | true    | No                                |
 
-## Building & Running
+## **Building & Running**
 
-### 1\. Local Docker Build
+**1. Local Docker Build**
 
 1.  **Build the image:**
-    ``` bash
-    docker build -t your-username/torus-scraper:v1 .
-    
-    ```
+    `docker build -t your-username/torus-scraper:v1 .`
 2.  **Run locally (for testing):**
     ``` bash
     docker run --rm \
@@ -63,38 +60,54 @@ The scraper is configured entirely via Environment Variables.
     
     ```
 3.  **Push to Registry:**
-    ``` bash
-    docker push your-username/torus-scraper:v1
-    
-    ```
+    `docker push your-username/torus-scraper:v1`
 
-### 2\. Kubernetes Deployment
+**2. Kubernetes Deployment**
 
 Use the provided `cronjob.yaml` to deploy to your cluster.
 
 1.  **Create a Secret** for your password:
-    ``` bash
-    kubectl create secret generic torus-secrets --from-literal=password='YOUR_REAL_PASSWORD'
-    
-    ```
+    `kubectl create secret generic torus-secrets --from-literal=password='YOUR_REAL_PASSWORD'`
 2.  **Edit `cronjob.yaml`** to match your environment variables and image name.
 3.  **Apply:**
-    ``` bash
-    kubectl apply -f cronjob.yaml
-    
-    ```
+    `kubectl apply -f cronjob.yaml`
 
-## Grafana Visualization
+## **Prometheus Metrics Reference**
 
-Use these PromQL queries to build your dashboard:
+Use these metric names when building your Grafana dashboard.
 
-  * **Input Voltage:** `torus_input_voltage_volts`
-  * **Output Power:** `torus_output_power_watts`
-  * **Device Status (Seconds Since Last Update):** `time() - torus_device_last_seen_timestamp`
-  * **Data Source (0=Cloud, 1=Local):** `torus_data_source`
+| Metric Name                                 | Type    | Description                                                   |
+| :-----------------------------------------: | :-----: | :-----------------------------------------------------------: |
+| **torus\_input\_voltage\_volts**            | Gauge   | Input voltage reading from the device.                        |
+| **torus\_output\_voltage\_volts**           | Gauge   | Output voltage reading from the device.                       |
+| **torus\_output\_current\_amps**            | Gauge   | Current load in Amps.                                         |
+| **torus\_output\_power\_watts**             | Gauge   | Power consumption in Watts.                                   |
+| **torus\_output\_thd\_percent**             | Gauge   | Total Harmonic Distortion (Cloud only).                       |
+| **torus\_device\_last\_seen\_timestamp**    | Counter | Unix timestamp of when the device last reported to the cloud. |
+| **torus\_scrape\_last\_success\_timestamp** | Counter | Unix timestamp of when the scraper last ran successfully.     |
+| **torus\_data\_source**                     | Enum    | Indicates the origin of the data point (See below).           |
 
-## Project Structure
+## **Data Source Values (`torus_data_source`)**
+
+This metric is crucial for understanding data freshness and accuracy.
+
+| Value | Name              | Description                                                           |
+| :---: | :---------------: | :-------------------------------------------------------------------: |
+| **0** | **CLOUD**         | Fresh, high-precision data from Torus Power Cloud.                    |
+| **1** | **LOCAL\_FRESH**  | Cloud stale; data successfully scraped from local device IP just now. |
+| **2** | **CLOUD\_STALE**  | Cloud stale AND local fallback failed/unavailable. Data is old.       |
+| **3** | **LOCAL\_CACHED** | Cloud stale; reusing cached local data (due to 5min rate limit).      |
+
+**Grafana Visualization Tips**
+
+  * **Device Status:** Use `time() - torus_device_last_seen_timestamp` to show "Seconds Since Update".
+      * Green: \< 60s
+      * Red: \> 3600s
+  * **Data Source:** Use a "Stat" or "State Timeline" panel mapped to the values above (0=Green/Cloud, 1=Blue/Local).
+
+**Project Structure**
 
   * `torus-scraper.js`: Main Node.js application logic.
   * `Dockerfile`: Multi-stage build definition using Node 20 Alpine.
   * `package.json`: Dependencies (axios, cheerio, qs).
+  * `cronjob.yaml`: Kubernetes deployment manifest.
